@@ -1,38 +1,11 @@
-import json
 import locale
-from datetime import datetime
-from unidecode import unidecode
+from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+from unidecode import unidecode
 
-def getDataFromUrl(url):
-  response = requests.get(url)
-
-  if response.status_code == 200:
-    data = []
-    soup = BeautifulSoup(response.content, 'html.parser')
-    titles = soup.find_all('div', class_='info-element-title')
-    descriptions = soup.find_all('div', class_='info-element-description')
-
-    for title, description in zip(titles, descriptions):
-        data.append((title.text, description.text))
-        
-    return data
-
-  else:
-    print(f"Error: {response.status_code} al obtener la página")
-    return []
-
-# # Ejemplo de uso
-# url = "https://www.taqui-co.com/"  # Reemplazar con la URL real
-# data = getDataFromUrl(url)
-#
-# if data:
-#     print("Títulos h2 encontrados:")
-#     for titles, descriptions in data:
-#         print("Titulo: ", titles, "\n", "Descripción: ", descriptions, "\n")
-# else:
-#     print("No se encontraron títulos h2")
+app = Flask(__name__)
 
 locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')
 
@@ -41,7 +14,46 @@ def parse_date(date_str):
     iso_date_str = date_obj.isoformat()
     return iso_date_str
 
-def scrape_posts(url):
+def scrape_taqui(url):
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        data = []
+        soup = BeautifulSoup(response.content, "html.parser")
+        titles = soup.find_all("div", class_="info-element-title")
+        descriptions = soup.find_all("div", class_="info-element-description")
+
+        for title, description in zip(titles, descriptions):
+            description = description.text
+            parts = description.split(": ")
+            city = parts[2].split(" ")[0]
+
+            if city == "Cali":
+                date = parts[3].split(" Lugar")[0].split(" ", 1)[1]
+                date = date.replace(" de", "").replace(" Del", "")
+                date = date.split(" ")
+
+                try:
+                    date = date[0] + " " + date[1] + " " + date[2]
+                    date = datetime.strptime(date, "%d %B %Y").isoformat()
+
+                    place = parts[4].split(" Hora")[0]
+                    data.append({
+                        'title': title.text,
+                        'description': 'No posee descripcion',
+                        'date': date,
+                        'place': place
+                    })
+                except Exception as e:
+                    continue
+
+        return data
+
+    else:
+        print(f"Error: {response.status_code} al obtener la página")
+        return []
+
+def scrape_teatro_calima(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -67,12 +79,6 @@ def scrape_posts(url):
 
     return posts
 
-# url = "https://teatrocalima.com.co/inicio/entretenimiento/#page-content"
-# posts = scrape_posts(url)
-#
-# posts_json = json.dumps(posts, indent=4, ensure_ascii=False)
-# print(posts_json)
-
 def scrape_eticket(url):
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'html.parser')
@@ -86,7 +92,6 @@ def scrape_eticket(url):
 
         title = event_soup.find('div', class_='font22 boldear800').text.strip()
         date_time = unidecode(event_soup.find('div', class_='font16 boldear600 borde_artista mayusculas_primera').text.strip())
-        print(date_time)
 
         components = date_time.split(', ')[1].split(' de ')
         day = components[0]
@@ -94,8 +99,6 @@ def scrape_eticket(url):
         year = components[2].split()[0]
         time = components[2].split()[1]
 
-
-        # Convertir a formato ISO 8601
         iso_date = datetime.strptime(f'{year}-{month}-{day} {time}', '%Y-%B-%d %H:%M').strftime('%Y-%m-%dT%H:%M')
         place = event_soup.find('div', class_='font18 boldear600').text.strip()
 
@@ -108,8 +111,15 @@ def scrape_eticket(url):
 
     return events
 
-# Prueba de la función
-url = 'https://www.eticket.co/eventos.aspx?idciudad=160'
-events_data = scrape_eticket(url)
-for event in events_data:
-    print(event)
+@app.route('/scrape_all')
+def scrape_all():
+    taqui_data = scrape_taqui("https://www.taqui-co.com/")
+    teatro_calima_data = scrape_teatro_calima("https://teatrocalima.com.co/inicio/entretenimiento/#page-content")
+    eticket_data = scrape_eticket('https://www.eticket.co/eventos.aspx?idciudad=160')
+
+    all_data = taqui_data + teatro_calima_data + eticket_data
+
+    return jsonify(all_data)
+
+if __name__ == '__main__':
+    app.run(debug=True)
