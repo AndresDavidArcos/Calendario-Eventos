@@ -257,24 +257,40 @@ $(".c-aside__month").text(monthText[month - 1]);
 
 
 function getAndLoadData() {
+  showLoader();
   console.log("Obteniendo eventos...");
   $.ajax({
     url: "http://127.0.0.1:5000/scrape_all",
     type: "GET",
     success: function (result) {
-      console.log(result)
+      // console.log(result)
       for (var i = 0; i < result.length; i++) {
         title = result[i].title
         date = result[i].date.split("-")
         date = date[0] - 2 + "-" + date[1] + "-" + date[2].slice(0, 2)
-        description = result[i].description + " - " + result[i].place
-        console.log(date)
+        if (result[i].description != "No posee descripcion"){
+          description = result[i].description + " - " + result[i].place
+        } else {
+          description = result[i].place
+        }
 
         defaultEvents(date, title, description, 'event');
+
+        hideLoader()
 
       }
       console.log("organizado")
     }
   })
 
+}
+
+function showLoader() {
+  var loader = document.getElementById("loader");
+  loader.style.display = "flex";
+}
+
+function hideLoader() {
+  var loader = document.getElementById("loader");
+  loader.style.display = "none";
 }
