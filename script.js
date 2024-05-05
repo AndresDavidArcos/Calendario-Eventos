@@ -263,7 +263,7 @@ function getAndLoadData() {
     url: "http://127.0.0.1:5000/scrape_all",
     type: "GET",
     success: function (result) {
-      // console.log(result)
+      console.log(result)
       for (var i = 0; i < result.length; i++) {
         title = result[i].title
         date = result[i].date.split("-")

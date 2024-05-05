@@ -121,7 +121,7 @@ def scrape_eticket(url):
         events.append(
             {
                 "title": title,
-                "description": "No posee descripción",
+                "description": "No posee descripcion",
                 "date": iso_date,
                 "place": place,
             }
