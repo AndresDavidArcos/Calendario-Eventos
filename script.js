@@ -30,24 +30,24 @@ today = year + "-" + month + "-" + day;
 
 
 // ------ set default events -------
-function defaultEvents(dataDay,dataName,dataNotes,classTag){
-  var date = $('*[data-day='+dataDay+']');
+function defaultEvents(dataDay, dataName, dataNotes, classTag) {
+  var date = $('*[data-day=' + dataDay + ']');
   date.attr("data-name", dataName);
   date.attr("data-notes", dataNotes);
   date.addClass("event");
   date.addClass("event--" + classTag);
 }
 
-defaultEvents(today, 'YEAH!','Today is your day','important');
-defaultEvents('2022-12-25', 'MERRY CHRISTMAS','A lot of gift!!!!','festivity');
-defaultEvents('2022-05-04', "LUCA'S BIRTHDAY",'Another gifts...?','birthday');
-defaultEvents('2022-03-03', "MY LADY'S BIRTHDAY",'A lot of money to spent!!!!','birthday');
+defaultEvents(today, 'YEAH!', 'Today is your day', 'important');
+defaultEvents('2022-12-25', 'MERRY CHRISTMAS', 'A lot of gift!!!!', 'festivity');
+defaultEvents('2022-05-04', "LUCA'S BIRTHDAY", 'Another gifts...?', 'birthday');
+defaultEvents('2022-03-03', "MY LADY'S BIRTHDAY", 'A lot of money to spent!!!!', 'birthday');
 
 
 // ------ functions control -------
 
 //button of the current day
-todayBtn.on("click", function() {
+todayBtn.on("click", function () {
   if (month < indexMonth) {
     var step = indexMonth % month;
     movePrev(step, true);
@@ -58,7 +58,7 @@ todayBtn.on("click", function() {
 });
 
 //higlight the cel of current day
-dataCel.each(function() {
+dataCel.each(function () {
   if ($(this).data("day") === today) {
     $(this).addClass("isToday");
     fillEventSidebar($(this));
@@ -66,10 +66,10 @@ dataCel.each(function() {
 });
 
 //window event creator
-addBtn.on("click", function() {
+addBtn.on("click", function () {
   winCreator.addClass("isVisible");
   $("body").addClass("overlay");
-  dataCel.each(function() {
+  dataCel.each(function () {
     if ($(this).hasClass("isSelected")) {
       today = $(this).data("day");
       document.querySelector('input[type="date"]').value = today;
@@ -78,11 +78,11 @@ addBtn.on("click", function() {
     }
   });
 });
-closeBtn.on("click", function() {
+closeBtn.on("click", function () {
   winCreator.removeClass("isVisible");
   $("body").removeClass("overlay");
 });
-saveBtn.on("click", function() {
+saveBtn.on("click", function () {
   var inputName = $("input[name=name]").val();
   var inputDate = $("input[name=date]").val();
   var inputNotes = $("textarea[name=notes]").val();
@@ -90,7 +90,7 @@ saveBtn.on("click", function() {
     .find(":selected")
     .text();
 
-  dataCel.each(function() {
+  dataCel.each(function () {
     if ($(this).data("day") === inputDate) {
       if (inputName != null) {
         $(this).attr("data-name", inputName);
@@ -120,7 +120,7 @@ function fillEventSidebar(self) {
   var thisBirthday = self.hasClass("event--birthday");
   var thisFestivity = self.hasClass("event--festivity");
   var thisEvent = self.hasClass("event");
-  
+
   switch (true) {
     case thisImportant:
       $(".c-aside__eventList").append(
@@ -158,16 +158,16 @@ function fillEventSidebar(self) {
         "</span></p>"
       );
       break;
-   }
+  }
 };
-dataCel.on("click", function() {
+dataCel.on("click", function () {
   var thisEl = $(this);
   var thisDay = $(this)
-  .attr("data-day")
-  .slice(8);
+    .attr("data-day")
+    .slice(8);
   var thisMonth = $(this)
-  .attr("data-day")
-  .slice(5, 7);
+    .attr("data-day")
+    .slice(5, 7);
 
   fillEventSidebar($(this));
 
@@ -215,7 +215,7 @@ function movePrev(fakeClick, indexPrev) {
 function buttonsPaginator(buttonId, mainClass, monthClass, next, prev) {
   switch (true) {
     case next:
-      $(buttonId).on("click", function() {
+      $(buttonId).on("click", function () {
         if (indexMonth >= 2) {
           $(mainClass).css({
             left: "+=100%"
@@ -229,7 +229,7 @@ function buttonsPaginator(buttonId, mainClass, monthClass, next, prev) {
       });
       break;
     case prev:
-      $(buttonId).on("click", function() {
+      $(buttonId).on("click", function () {
         if (indexMonth <= 11) {
           $(mainClass).css({
             left: "-=100%"
@@ -254,3 +254,27 @@ moveNext(indexMonth - 1, false);
 //fill the sidebar with current day
 $(".c-aside__num").text(day);
 $(".c-aside__month").text(monthText[month - 1]);
+
+
+function getAndLoadData() {
+  console.log("Obteniendo eventos...");
+  $.ajax({
+    url: "http://127.0.0.1:5000/scrape_all",
+    type: "GET",
+    success: function (result) {
+      console.log(result)
+      for (var i = 0; i < result.length; i++) {
+        title = result[i].title
+        date = result[i].date.split("-")
+        date = date[0] - 2 + "-" + date[1] + "-" + date[2].slice(0, 2)
+        description = result[i].description + " - " + result[i].place
+        console.log(date)
+
+        defaultEvents(date, title, description, 'event');
+
+      }
+      console.log("organizado")
+    }
+  })
+
+}
