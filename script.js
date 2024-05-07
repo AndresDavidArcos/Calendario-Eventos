@@ -273,7 +273,6 @@ function getAndLoadData() {
         } else {
           description = result[i].place
         }
-
         defaultEvents(date, title, description, 'event');
 
         hideLoader()
